@@ -287,7 +287,7 @@ func (m *MockedNodeBridge) PruningEpoch() iotago.EpochIndex {
 	panic("not implemented")
 }
 
-func (m *MockedNodeBridge) RequestTips(ctx context.Context, count uint32) (strong iotago.BlockIDs, weak iotago.BlockIDs, shallowLike iotago.BlockIDs, err error) {
+func (m *MockedNodeBridge) BlockIssuance(ctx context.Context, maxParentCount uint32) (*api.IssuanceBlockHeaderResponse, error) {
 	panic("not implemented")
 }
 
