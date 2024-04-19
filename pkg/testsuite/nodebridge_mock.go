@@ -1,4 +1,4 @@
-//nolint:revive,containedctx,nonamedreturns // skip linter for this package name
+//nolint:revive,containedctx // skip linter for this package name
 package testsuite
 
 import (
