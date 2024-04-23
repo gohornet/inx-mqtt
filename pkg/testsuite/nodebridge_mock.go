@@ -33,8 +33,7 @@ type MockedNodeBridge struct {
 	mockedOutputs             map[iotago.OutputID]*nodebridge.Output
 
 	mockedStreamListenToBlocks               *MockedStream[MockedBlock]
-	mockedStreamListenToAcceptedBlocks       *MockedStream[inx.BlockMetadata]
-	mockedStreamListenToConfirmedBlocks      *MockedStream[inx.BlockMetadata]
+	mockedStreamListenToBlockMetadata        *MockedStream[inx.BlockMetadata]
 	mockedStreamListenToCommitments          *MockedStream[MockedCommitment]
 	mockedStreamListenToLedgerUpdates        *MockedStream[nodebridge.LedgerUpdate]
 	mockedStreamListenToAcceptedTransactions *MockedStream[nodebridge.AcceptedTransaction]
@@ -164,38 +163,15 @@ func (m *MockedNodeBridge) ListenToBlocks(ctx context.Context, consumer func(blo
 	return nil
 }
 
-func (m *MockedNodeBridge) ListenToAcceptedBlocks(ctx context.Context, consumer func(blockMetadata *api.BlockMetadataResponse) error) error {
-	if m.mockedStreamListenToAcceptedBlocks == nil {
-		require.FailNow(m.t, "ListenToAcceptedBlocks mock not initialized")
+func (m *MockedNodeBridge) ListenToBlockMetadata(ctx context.Context, consumer func(blockMetadata *api.BlockMetadataResponse) error) error {
+	if m.mockedStreamListenToBlockMetadata == nil {
+		require.FailNow(m.t, "ListenToBlockMetadata mock not initialized")
 	}
 
-	err := nodebridge.ListenToStream(ctx, m.mockedStreamListenToAcceptedBlocks.receiverFunc(), func(inxBlockMetadata *inx.BlockMetadata) error {
-		blockMetadata, err := inxBlockMetadata.Unwrap()
-		if err != nil {
-			return err
-		}
-
-		return consumer(blockMetadata)
+	err := nodebridge.ListenToStream(ctx, m.mockedStreamListenToBlockMetadata.receiverFunc(), func(inxBlockMetadata *inx.BlockMetadata) error {
+		return consumer(inxBlockMetadata.Unwrap())
 	})
-	require.NoError(m.t, err, "ListenToAcceptedBlocks failed")
-
-	return nil
-}
-
-func (m *MockedNodeBridge) ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *api.BlockMetadataResponse) error) error {
-	if m.mockedStreamListenToConfirmedBlocks == nil {
-		require.FailNow(m.t, "ListenToConfirmedBlocks mock not initialized")
-	}
-
-	err := nodebridge.ListenToStream(ctx, m.mockedStreamListenToConfirmedBlocks.receiverFunc(), func(inxBlockMetadata *inx.BlockMetadata) error {
-		blockMetadata, err := inxBlockMetadata.Unwrap()
-		if err != nil {
-			return err
-		}
-
-		return consumer(blockMetadata)
-	})
-	require.NoError(m.t, err, "ListenToConfirmedBlocks failed")
+	require.NoError(m.t, err, "ListenToBlockMetadata failed")
 
 	return nil
 }
@@ -304,13 +280,9 @@ func (m *MockedNodeBridge) MockClear() {
 		m.mockedStreamListenToBlocks.Close()
 		m.mockedStreamListenToBlocks = nil
 	}
-	if m.mockedStreamListenToAcceptedBlocks != nil {
-		m.mockedStreamListenToAcceptedBlocks.Close()
-		m.mockedStreamListenToAcceptedBlocks = nil
-	}
-	if m.mockedStreamListenToConfirmedBlocks != nil {
-		m.mockedStreamListenToConfirmedBlocks.Close()
-		m.mockedStreamListenToConfirmedBlocks = nil
+	if m.mockedStreamListenToBlockMetadata != nil {
+		m.mockedStreamListenToBlockMetadata.Close()
+		m.mockedStreamListenToBlockMetadata = nil
 	}
 	if m.mockedStreamListenToCommitments != nil {
 		m.mockedStreamListenToCommitments.Close()
@@ -376,14 +348,9 @@ func (m *MockedNodeBridge) MockListenToBlocks() *MockedStream[MockedBlock] {
 	return m.mockedStreamListenToBlocks
 }
 
-func (m *MockedNodeBridge) MockListenToAcceptedBlocks() *MockedStream[inx.BlockMetadata] {
-	m.mockedStreamListenToAcceptedBlocks = InitMockedStream[inx.BlockMetadata]()
-	return m.mockedStreamListenToAcceptedBlocks
-}
-
-func (m *MockedNodeBridge) MockListenToConfirmedBlocks() *MockedStream[inx.BlockMetadata] {
-	m.mockedStreamListenToConfirmedBlocks = InitMockedStream[inx.BlockMetadata]()
-	return m.mockedStreamListenToConfirmedBlocks
+func (m *MockedNodeBridge) MockListenToBlockMetadata() *MockedStream[inx.BlockMetadata] {
+	m.mockedStreamListenToBlockMetadata = InitMockedStream[inx.BlockMetadata]()
+	return m.mockedStreamListenToBlockMetadata
 }
 
 func (m *MockedNodeBridge) MockListenToCommitments() *MockedStream[MockedCommitment] {

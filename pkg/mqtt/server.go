@@ -408,7 +408,11 @@ func (s *Server) listenToBlocks(ctx context.Context) error {
 }
 
 func (s *Server) listenToAcceptedBlocksMetadata(ctx context.Context) error {
-	return s.NodeBridge.ListenToAcceptedBlocks(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
+	return s.NodeBridge.ListenToBlockMetadata(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
+		if blockMetadata.BlockState != api.BlockStateAccepted {
+			return nil
+		}
+
 		if err := s.publishBlockMetadataOnTopicsIfSubscribed(func() (*api.BlockMetadataResponse, error) { return blockMetadata, nil },
 			api.EventAPITopicBlockMetadataAccepted,
 			GetTopicBlockMetadata(blockMetadata.BlockID),
@@ -422,7 +426,11 @@ func (s *Server) listenToAcceptedBlocksMetadata(ctx context.Context) error {
 }
 
 func (s *Server) listenToConfirmedBlocksMetadata(ctx context.Context) error {
-	return s.NodeBridge.ListenToConfirmedBlocks(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
+	return s.NodeBridge.ListenToBlockMetadata(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
+		if blockMetadata.BlockState != api.BlockStateConfirmed {
+			return nil
+		}
+
 		if err := s.publishBlockMetadataOnTopicsIfSubscribed(func() (*api.BlockMetadataResponse, error) { return blockMetadata, nil },
 			api.EventAPITopicBlockMetadataConfirmed,
 			GetTopicBlockMetadata(blockMetadata.BlockID),

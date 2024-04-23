@@ -375,7 +375,7 @@ func TestMqttTopics(t *testing.T) {
 					ts.MockAddBlockMetadata(blockMetadataResponse.BlockID, blockMetadataResponse)
 				},
 				postSubscribeFunc: func() {
-					ts.ReceiveAcceptedBlock(lo.PanicOnErr(inx.WrapBlockMetadata(blockMetadataResponse)))
+					ts.ReceiveBlockMetadata(inx.WrapBlockMetadata(blockMetadataResponse))
 				},
 			}
 		}(),
@@ -402,7 +402,7 @@ func TestMqttTopics(t *testing.T) {
 				jsonTarget: lo.PanicOnErr(ts.API().JSONEncode(blockMetadataResponse)),
 				rawTarget:  lo.PanicOnErr(ts.API().Encode(blockMetadataResponse)),
 				postSubscribeFunc: func() {
-					ts.ReceiveAcceptedBlock(lo.PanicOnErr(inx.WrapBlockMetadata(blockMetadataResponse)))
+					ts.ReceiveBlockMetadata(inx.WrapBlockMetadata(blockMetadataResponse))
 				},
 			}
 		}(),
@@ -411,7 +411,7 @@ func TestMqttTopics(t *testing.T) {
 		func() *test {
 			blockMetadataResponse := &api.BlockMetadataResponse{
 				BlockID:    tpkg.RandBlockID(),
-				BlockState: api.BlockStateAccepted,
+				BlockState: api.BlockStateConfirmed,
 			}
 
 			return &test{
@@ -429,7 +429,7 @@ func TestMqttTopics(t *testing.T) {
 				jsonTarget: lo.PanicOnErr(ts.API().JSONEncode(blockMetadataResponse)),
 				rawTarget:  lo.PanicOnErr(ts.API().Encode(blockMetadataResponse)),
 				postSubscribeFunc: func() {
-					ts.ReceiveConfirmedBlock(lo.PanicOnErr(inx.WrapBlockMetadata(blockMetadataResponse)))
+					ts.ReceiveBlockMetadata(inx.WrapBlockMetadata(blockMetadataResponse))
 				},
 			}
 		}(),
