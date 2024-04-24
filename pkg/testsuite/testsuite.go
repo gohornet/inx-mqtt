@@ -28,8 +28,7 @@ type TestSuite struct {
 	server     *mqtt.Server
 
 	mockedStreamListenToBlocks               *MockedStream[MockedBlock]
-	mockedStreamListenToAcceptedBlocks       *MockedStream[inx.BlockMetadata]
-	mockedStreamListenToConfirmedBlocks      *MockedStream[inx.BlockMetadata]
+	mockedStreamListenToBlockMetadata        *MockedStream[inx.BlockMetadata]
 	mockedStreamListenToCommitments          *MockedStream[MockedCommitment]
 	mockedStreamListenToLedgerUpdates        *MockedStream[nodebridge.LedgerUpdate]
 	mockedStreamListenToAcceptedTransactions *MockedStream[nodebridge.AcceptedTransaction]
@@ -61,8 +60,7 @@ func NewTestSuite(t *testing.T) *TestSuite {
 		server:     server,
 
 		mockedStreamListenToBlocks:               bridge.MockListenToBlocks(),
-		mockedStreamListenToAcceptedBlocks:       bridge.MockListenToAcceptedBlocks(),
-		mockedStreamListenToConfirmedBlocks:      bridge.MockListenToConfirmedBlocks(),
+		mockedStreamListenToBlockMetadata:        bridge.MockListenToBlockMetadata(),
 		mockedStreamListenToCommitments:          bridge.MockListenToCommitments(),
 		mockedStreamListenToLedgerUpdates:        bridge.MockListenToLedgerUpdates(),
 		mockedStreamListenToAcceptedTransactions: bridge.MockListenToAcceptedTransactions(),
@@ -90,8 +88,7 @@ func (ts *TestSuite) Reset() {
 	ts.broker.MockClear()
 
 	ts.mockedStreamListenToBlocks = ts.nodeBridge.MockListenToBlocks()
-	ts.mockedStreamListenToAcceptedBlocks = ts.nodeBridge.MockListenToAcceptedBlocks()
-	ts.mockedStreamListenToConfirmedBlocks = ts.nodeBridge.MockListenToConfirmedBlocks()
+	ts.mockedStreamListenToBlockMetadata = ts.nodeBridge.MockListenToBlockMetadata()
 	ts.mockedStreamListenToCommitments = ts.nodeBridge.MockListenToCommitments()
 	ts.mockedStreamListenToLedgerUpdates = ts.nodeBridge.MockListenToLedgerUpdates()
 	ts.mockedStreamListenToAcceptedTransactions = ts.nodeBridge.MockListenToAcceptedTransactions()
@@ -137,12 +134,8 @@ func (ts *TestSuite) ReceiveBlock(block *MockedBlock) {
 	ts.mockedStreamListenToBlocks.Receive(block)
 }
 
-func (ts *TestSuite) ReceiveAcceptedBlock(metadata *inx.BlockMetadata) {
-	ts.mockedStreamListenToAcceptedBlocks.Receive(metadata)
-}
-
-func (ts *TestSuite) ReceiveConfirmedBlock(metadata *inx.BlockMetadata) {
-	ts.mockedStreamListenToConfirmedBlocks.Receive(metadata)
+func (ts *TestSuite) ReceiveBlockMetadata(metadata *inx.BlockMetadata) {
+	ts.mockedStreamListenToBlockMetadata.Receive(metadata)
 }
 
 func (ts *TestSuite) ReceiveCommitment(commitment *MockedCommitment) {

@@ -27,8 +27,7 @@ const (
 
 const (
 	GrpcListenToBlocks               = "INX.ListenToBlocks"
-	GrpcListenToAcceptedBlocks       = "INX.ListenToAcceptedBlocks"
-	GrpcListenToConfirmedBlocks      = "INX.ListenToConfirmedBlocks"
+	GrpcListenToBlockMetadata        = "INX.ListenToBlockMetadata"
 	GrpcListenToAcceptedTransactions = "INX.ListenToAcceptedTransactions"
 	GrpcListenToLedgerUpdates        = "INX.ListenToLedgerUpdates"
 )
@@ -216,10 +215,10 @@ func (s *Server) onSubscribeTopic(ctx context.Context, clientID string, topic st
 		s.startListenIfNeeded(ctx, GrpcListenToBlocks, s.listenToBlocks)
 
 	case api.EventAPITopicBlockMetadataAccepted:
-		s.startListenIfNeeded(ctx, GrpcListenToAcceptedBlocks, s.listenToAcceptedBlocksMetadata)
+		s.startListenIfNeeded(ctx, GrpcListenToBlockMetadata, s.listenToBlockMetadata)
 
 	case api.EventAPITopicBlockMetadataConfirmed:
-		s.startListenIfNeeded(ctx, GrpcListenToConfirmedBlocks, s.listenToConfirmedBlocksMetadata)
+		s.startListenIfNeeded(ctx, GrpcListenToBlockMetadata, s.listenToBlockMetadata)
 
 	default:
 		switch {
@@ -234,8 +233,7 @@ func (s *Server) onSubscribeTopic(ctx context.Context, clientID string, topic st
 			// so it must be a blockID
 			if blockID := BlockIDFromBlockMetadataTopic(topic); !blockID.Empty() {
 				// start listening to accepted and confirmed blocks if not already done to get state updates for that blockID
-				s.startListenIfNeeded(ctx, GrpcListenToAcceptedBlocks, s.listenToAcceptedBlocksMetadata)
-				s.startListenIfNeeded(ctx, GrpcListenToConfirmedBlocks, s.listenToConfirmedBlocksMetadata)
+				s.startListenIfNeeded(ctx, GrpcListenToBlockMetadata, s.listenToBlockMetadata)
 
 				go s.fetchAndPublishBlockMetadata(ctx, blockID)
 			}
@@ -286,10 +284,10 @@ func (s *Server) onUnsubscribeTopic(clientID string, topic string) {
 		s.stopListenIfNeeded(GrpcListenToBlocks)
 
 	case api.EventAPITopicBlockMetadataAccepted:
-		s.stopListenIfNeeded(GrpcListenToAcceptedBlocks)
+		s.stopListenIfNeeded(GrpcListenToBlockMetadata)
 
 	case api.EventAPITopicBlockMetadataConfirmed:
-		s.stopListenIfNeeded(GrpcListenToConfirmedBlocks)
+		s.stopListenIfNeeded(GrpcListenToBlockMetadata)
 
 	default:
 		switch {
@@ -301,8 +299,7 @@ func (s *Server) onUnsubscribeTopic(clientID string, topic string) {
 		case strings.HasPrefix(topic, "block-metadata/"):
 			// topicBlockMetadata
 			// it can't be topicBlockMetadataAccepted or topicBlockMetadataConfirmed because they are handled above
-			s.stopListenIfNeeded(GrpcListenToAcceptedBlocks)
-			s.stopListenIfNeeded(GrpcListenToConfirmedBlocks)
+			s.stopListenIfNeeded(GrpcListenToBlockMetadata)
 
 		case strings.HasPrefix(topic, "outputs/") || strings.HasPrefix(topic, "transactions/") || strings.HasPrefix(topic, "transaction-metadata/"):
 			// topicOutputs
@@ -407,27 +404,23 @@ func (s *Server) listenToBlocks(ctx context.Context) error {
 	})
 }
 
-func (s *Server) listenToAcceptedBlocksMetadata(ctx context.Context) error {
-	return s.NodeBridge.ListenToAcceptedBlocks(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
-		if err := s.publishBlockMetadataOnTopicsIfSubscribed(func() (*api.BlockMetadataResponse, error) { return blockMetadata, nil },
-			api.EventAPITopicBlockMetadataAccepted,
-			GetTopicBlockMetadata(blockMetadata.BlockID),
-		); err != nil {
-			s.LogErrorf("failed to publish accepted block metadata: %v", err)
-		}
-
-		// we don't return an error here, because we want to continue listening even if publishing fails once
-		return nil
-	})
-}
-
-func (s *Server) listenToConfirmedBlocksMetadata(ctx context.Context) error {
-	return s.NodeBridge.ListenToConfirmedBlocks(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
-		if err := s.publishBlockMetadataOnTopicsIfSubscribed(func() (*api.BlockMetadataResponse, error) { return blockMetadata, nil },
-			api.EventAPITopicBlockMetadataConfirmed,
-			GetTopicBlockMetadata(blockMetadata.BlockID),
-		); err != nil {
-			s.LogErrorf("failed to publish confirmed block metadata: %v", err)
+func (s *Server) listenToBlockMetadata(ctx context.Context) error {
+	return s.NodeBridge.ListenToBlockMetadata(ctx, func(blockMetadata *api.BlockMetadataResponse) error {
+		switch blockMetadata.BlockState {
+		case api.BlockStateAccepted:
+			if err := s.publishBlockMetadataOnTopicsIfSubscribed(func() (*api.BlockMetadataResponse, error) { return blockMetadata, nil },
+				api.EventAPITopicBlockMetadataAccepted,
+				GetTopicBlockMetadata(blockMetadata.BlockID),
+			); err != nil {
+				s.LogErrorf("failed to publish accepted block metadata: %v", err)
+			}
+		case api.BlockStateConfirmed:
+			if err := s.publishBlockMetadataOnTopicsIfSubscribed(func() (*api.BlockMetadataResponse, error) { return blockMetadata, nil },
+				api.EventAPITopicBlockMetadataConfirmed,
+				GetTopicBlockMetadata(blockMetadata.BlockID),
+			); err != nil {
+				s.LogErrorf("failed to publish confirmed block metadata: %v", err)
+			}
 		}
 
 		// we don't return an error here, because we want to continue listening even if publishing fails once
