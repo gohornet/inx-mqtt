@@ -12,7 +12,7 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20240423111221-4248ffa5d850
 	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20240423105148-cc9e62fe4f63
 	github.com/iotaledger/iota.go/v4 v4.0.0-20240419095144-054bd7d2ba61
-	github.com/labstack/echo/v4 v4.11.4
+	github.com/labstack/echo/v4 v4.12.0
 	github.com/mochi-mqtt/server/v2 v2.4.6
 	github.com/prometheus/client_golang v1.19.0
 	github.com/stretchr/testify v1.9.0
